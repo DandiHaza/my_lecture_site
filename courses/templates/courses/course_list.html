@@ -1,0 +1,16 @@
+{% extends 'courses/base.html' %}
+
+{% block title %}전체 강의 목록{% endblock %}
+
+{% block content %}
+    <h1>전체 강의 목록</h1>
+    <hr>
+
+    {% for course in courses %}
+        <div class="course-card">
+            <h2><a href="{% url 'course_detail' course.id %}">{{ course.title }}</a></h2>
+            <p>{{ course.description }}</p>
+            <p class="price">가격: {{ course.price }}원</p>
+        </div>
+    {% endfor %}
+{% endblock %}

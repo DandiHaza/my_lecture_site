@@ -1,0 +1,36 @@
+{% extends 'courses/base.html' %}
+{% load static %}
+
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ course.title }}</h1>
+    <hr>
+    <p>{{ course.description }}</p>
+    <p class="price">가격: {{ course.price }}원</p>
+
+    {% if user.is_authenticated %}
+        {% if is_enrolled %}
+            <p><strong>✅ 이미 수강 중인 강의입니다.</strong></p>
+
+            <div class="lesson-list">
+                <h3>강의 목차</h3>
+                <ul>
+                    {% for lesson in lessons %}
+                        <li>{{ lesson.title }} - <a href="{{ lesson.video_url }}" target="_blank">영상 보기</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        {% else %}
+            <form action="{% url 'enroll' course.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">수강 신청</button>
+            </form>
+        {% endif %}
+    {% else %}
+        <p><a href="{% url 'login' %}?next={{ request.path }}">로그인</a> 후 수강 신청할 수 있습니다.</p>
+    {% endif %}
+
+    <a href="{% url 'course_list' %}">목록으로 돌아가기</a>
+{% endblock %}
