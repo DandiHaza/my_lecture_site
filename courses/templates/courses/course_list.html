@@ -3,14 +3,21 @@
 {% block title %}전체 강의 목록{% endblock %}
 
 {% block content %}
-    <h1>전체 강의 목록</h1>
-    <hr>
-
-    {% for course in courses %}
-        <div class="course-card">
-            <h2><a href="{% url 'course_detail' course.id %}">{{ course.title }}</a></h2>
-            <p>{{ course.description }}</p>
-            <p class="price">가격: {{ course.price }}원</p>
+    <div class="card">
+        <div class="card-header">
+            <h1>전체 강의 목록</h1>
         </div>
-    {% endfor %}
+        <ul class="list-group list-group-flush">
+            {% for course in courses %}
+                <li class="list-group-item">
+                    {% if course.image %}
+                        <img src="{{ course.image.url }}" alt="{{ course.title }}" style="max-width: 200px; height: auto; margin-bottom: 10px;">
+                    {% endif %}
+                    <h4><a href="{% url 'course_detail' course.id %}">{{ course.title }}</a></h4>
+                    <p>{{ course.description }}</p>
+                    <p class="fw-bold text-primary">가격: {{ course.price }}원</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

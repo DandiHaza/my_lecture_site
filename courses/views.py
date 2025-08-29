@@ -7,6 +7,10 @@ from django.views import generic # generic view 추가
 from .models import Course
 from django.shortcuts import redirect
 from .models import Course, Enrollment
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .forms import CustomUserCreationForm
 
 @login_required
 def course_list(request):
@@ -41,4 +45,34 @@ def enroll(request, course_id):
 class SignUpView(generic.CreateView):
     form_class = UserCreationForm
     success_url = reverse_lazy('login') # 회원가입 성공 시 로그인 페이지로 이동
+    template_name = 'registration/signup.html'
+
+
+@login_required
+@csrf_exempt  # CSRF 보호를 임시로 비활성화 (실제 서비스에서는 다른 방식 사용)
+def payment_verify(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        imp_uid = data.get('imp_uid')
+        course_id = data.get('course_id')
+
+        # 여기에 포트원 API를 호출해서 실제 결제 금액을 확인하는 로직이 들어갑니다.
+        # 지금은 일단 성공했다고 가정하고 넘어갑니다.
+
+        course = get_object_or_404(Course, pk=course_id)
+        Enrollment.objects.get_or_create(student=request.user, course=course)
+
+        return JsonResponse({'status': 'success', 'message': '결제가 확인되었습니다.'})
+
+    return JsonResponse({'status': 'error', 'message': '잘못된 요청입니다.'}, status=400)
+
+@login_required # 당연히 로그인한 사용자만 볼 수 있어야 합니다.
+def my_courses(request):
+    # 현재 로그인한 유저가 수강신청한 Enrollment 기록들을 모두 가져옵니다.
+    enrollments = Enrollment.objects.filter(student=request.user)
+    return render(request, 'courses/my_courses.html', {'enrollments': enrollments})
+
+class SignUpView(generic.CreateView):
+    form_class = CustomUserCreationForm # 이 부분을 수정!
+    success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'

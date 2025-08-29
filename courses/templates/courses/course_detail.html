@@ -4,8 +4,14 @@
 {% block title %}{{ course.title }}{% endblock %}
 
 {% block content %}
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+    <script type="text/javascript" src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+
     <h1>{{ course.title }}</h1>
     <hr>
+    {% if course.image %}
+        <img src="{{ course.image.url }}" alt="{{ course.title }}" style="max-width: 300px; height: auto; margin-bottom: 15px;">
+    {% endif %}
     <p>{{ course.description }}</p>
     <p class="price">가격: {{ course.price }}원</p>
 
@@ -21,16 +27,51 @@
                     {% endfor %}
                 </ul>
             </div>
-
         {% else %}
-            <form action="{% url 'enroll' course.id %}" method="post">
-                {% csrf_token %}
-                <button type="submit">수강 신청</button>
-            </form>
+            <button id="payment-button">결제하기</button>
         {% endif %}
     {% else %}
-        <p><a href="{% url 'login' %}?next={{ request.path }}">로그인</a> 후 수강 신청할 수 있습니다.</p>
+        <p><a href="{% url 'login' %}?next={{ request.path }}">로그인</a> 후 결제할 수 있습니다.</p>
     {% endif %}
 
     <a href="{% url 'course_list' %}">목록으로 돌아가기</a>
+
+    <script>
+        $('#payment-button').click(function () {
+            var IMP = window.IMP;
+            IMP.init("imp10391932"); // 포트원 내 식별코드를 넣으세요. 테스트용 코드입니다.
+
+            IMP.request_pay({
+                pg : 'kakaopay',
+                pay_method : 'card',
+                merchant_uid : 'merchant_' + new Date().getTime(), // 주문번호
+                name : '{{ course.title }}', // 주문명
+                amount : {{ course.price }}, // 결제금액
+                buyer_email : '{{ user.email }}',
+                buyer_name : '{{ user.username }}',
+            }, function(rsp) {
+                if ( rsp.success ) {
+                    // 결제 성공 시, imp_uid와 course_id를 우리 서버로 보냅니다.
+                    $.ajax({
+                        url: "{% url 'payment_verify' %}",
+                        method: "POST",
+                        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                        data: JSON.stringify({
+                            "imp_uid": rsp.imp_uid,
+                            "course_id": {{ course.id }}
+                        }),
+                        contentType: "application/json; charset=utf-8",
+                    }).done(function (data) {
+                        // 서버에서 결제 검증이 성공적으로 끝나면
+                        alert(data.message);
+                        window.location.reload(); // 페이지를 새로고침해서 '수강 중' 상태로 변경
+                    }).fail(function(xhr, status, error) {
+                        alert("결제 검증에 실패했습니다. 관리자에게 문의하세요.");
+                    });
+                } else {
+                    alert('결제에 실패했습니다. 에러내용 : ' + rsp.error_msg);
+                }
+            });
+        });
+    </script>
 {% endblock %}
